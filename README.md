@@ -1,135 +1,219 @@
-# Лабораторна робота №3
-## Тема: Розробка REST API з Flask та Docker
+# Лабораторна робота 3 — Валідація, обробка помилок, ORM
 
-**Виконав:** Бурлій Андрій  
-**Група:** ІО-32  
-**Варіант:** 2 — Користувацькі категорії витрат
 
----
-
-## Визначення варіанту
-Номер групи: **32**  
-Розрахунок: **32 mod 3 = 2**  
-Висновок: **Варіант №2 — Користувацькі категорії витрат**
-
-### Що реалізовано в межах варіанту
-- Підтримка **глобальних** і **користувацьких** категорій.
-- Створення користувацьких категорій із заголовком `X-User-Id`.
-- Перегляд категорій:
-  - без `X-User-Id` → лише глобальні;
-  - з `X-User-Id` → глобальні **+** персональні користувача.
-- Захист від дублікатів (409 Conflict) і валідація вхідних даних (422).
+**Проєкт:** Expenses API (Flask + SQLAlchemy)  
+**Група:** 32 → `32 % 3 = 2` ⇒ **Варіант: користувацькі категорії витрат**
 
 ---
 
-## Мета роботи
-Розробити REST API для обліку витрат із використанням **Flask**, **SQLAlchemy**, **PostgreSQL** та **Docker Compose**.  
-Реалізувати CRUD для користувачів, категорій і витрат; забезпечити контейнеризований запуск і перевірку через **Postman/curl**.
+## Мета та завдання ЛР3
+
+Мета роботи – покращити проєкт обліку витрат за рахунок:
+
+- валідації вхідних даних;
+- централізованої обробки помилок;
+- використання ORM-моделей і міграцій бази даних;
+- реалізації **користувацьких категорій витрат** (глобальні + персональні).
+
+Основне:
+
+- є **глобальні категорії** (видимі для всіх користувачів);
+- є **користувацькі категорії**, прив’язані до конкретного `user_id`;
+- фільтрація витрат за користувачем і категоріями;
+- коректні коди відповіді (400, 404, 409 тощо).
 
 ---
 
-## Використані технології
-- Python 3.11 • Flask 3.x • Flask-Smorest  
-- SQLAlchemy • Alembic / Flask-Migrate  
-- PostgreSQL 16 • Docker Compose  
-- Marshmallow (валідація) • Postman / curl
+## Стек
+
+- **Flask**, **flask-smorest** — REST API, валідація, OpenAPI
+- **SQLAlchemy**, **Flask-Migrate** — ORM + міграції
+- **PostgreSQL** — база даних (docker-compose)
+- **Marshmallow** — схеми запитів/відповідей, валідація
+- **Docker / docker-compose** — запуск БД та API в контейнерах
 
 ---
 
-## Запуск проєкту
+## Запуск через Docker
 
-### 1) Середовище (Docker)
+1. Переконатися, що встановлені **Docker Desktop** та **docker-compose**.
+2. У корені проєкту (`Lab 3`) виконати:
+
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
-Після запуску обидва контейнери працюють коректно.
+3. Після старту контейнерів API буде доступний на:
 
-**Рис. 1. Запущені контейнери у Docker Desktop**  
-![Docker Desktop containers](screens/01_docker_desktop_containers.png)
-
-### 2) Міграції БД
-```bash
-flask --app manage.py db init
-flask --app manage.py db migrate -m "initial"
-flask --app manage.py db upgrade
+```text
+http://localhost:5000
 ```
 
-Створено таблиці: `users`, `categories`, `expenses`.
+Перевірка healthcheck:
 
----
-
-## Перевірка ендпоінтів (мінімальний сценарій)
-
-### Користувачі та категорії
-- `GET /health` — 200 OK  
-- `POST /api/users` — 201 Created (або 409 Conflict при дублікаті)  
-- `POST /api/categories` — 201 Created (або 409 Conflict)  
-- `GET /api/categories`  
-  - без заголовка — лише глобальні
-  - з `X-User-Id` — глобальні + персональні
-
-**Рис. 2. Тестування ендпоінтів користувачів та категорій**  
-![Users & Categories API tests](screens/02_api_users_categories_tests.png)
-
-### Витрати
-- `POST /api/expenses` — 201 Created  
-- `POST /api/expenses` з `amount=0` → 422 Unprocessable Entity (валідація)  
-- `GET /api/expenses` — 200 OK
-
-**Рис. 3. Створення витрати та помилка валідації**  
-![Expense creation & validation error](screens/03_api_expenses_tests.png)
-
-**Рис. 4. Відповідь `GET /api/expenses`**  
-![Expenses list response](screens/04_api_expenses_list.png)
-
----
-
-## Postman колекція
-
-У репозиторії додано готову колекцію для перевірки:  
-**`Lab3_Burlii_IO32_V3.postman_collection.json`**
-
-Запити в колекції:
-1. `GET /health`  
-2. `POST /api/users`  
-3. `POST /api/categories`  
-4. `POST /api/expenses`  
-5. `GET /api/expenses`
-
-> Для запитів, що залежать від користувача, використовуй заголовок  
-> `X-User-Id: {{user_id}}` (можна оголосити змінну середовища в Postman).
-
----
-
-## Структура проєкту
-```
-Lab3/
- ├─ app/
- │  ├─ __init__.py
- │  ├─ models.py
- │  ├─ schemas.py
- │  └─ routes/
- │     ├─ users.py
- │     ├─ categories.py
- │     └─ expenses.py
- ├─ migrations/
- ├─ postman/
- ├─ screens/
- │  ├─ 01_docker_desktop_containers.png
- │  ├─ 02_api_users_categories_tests.png
- │  ├─ 03_api_expenses_tests.png
- │  └─ 04_api_expenses_list.png
- ├─ Dockerfile
- ├─ docker-compose.yml
- ├─ manage.py
- ├─ config.py
- ├─ requirements.txt
- ├─ wsgi.py
- └─ README.md
+```text
+GET http://localhost:5000/health
 ```
 
 ---
 
-## Висновок
-Зроблено REST API для обліку витрат, реалізовано ORM-моделі, валідацію і обробку помилок, налаштовано Docker-інфраструктуру та міграції. Продемонстровано логіку **варіанту №2 — користувацькі категорії витрат**, підготовлено Postman-колекцію та скріншоти з перевірками. Проєкт відповідає вимогам ЛР-3.
+## Скріншоти ЛР3
+
+### 1. Docker Desktop — запущені контейнери
+
+![Docker containers](screens/01_docker_desktop_containers.png)
+
+### 2. Тести для users та categories
+
+![Users & Categories tests](screens/02_api_users_categories_tests.png)
+
+### 3. Тести для expenses
+
+![Expenses tests](screens/03_api_expenses_tests.png)
+
+### 4. Список витрат (endpoint /api/expenses)
+
+![Expenses list](screens/04_api_expenses_list.png)
+
+---
+
+## Postman (ЛР3)
+
+Колекція та environment у каталозі `postman/`:
+
+- `expenses_lab3_collection.json`
+- `expenses_lab3_environment.json`
+
+У середовищі **Expenses API — local**:
+
+- змінна `baseUrl` = `http://localhost:5000`;
+- для користувацьких категорій у запитах додається заголовок `X-User-Id`.
+
+---
+
+# Лабораторна робота 4 — Аутентифікація (JWT)
+
+У ЛР4 до проєкту ЛР3 додано **аутентифікацію на основі JWT**:
+
+- реєстрація користувачів із хешуванням пароля (`passlib.pbkdf2_sha256`);
+- логін і видача **JWT access_token** (`flask-jwt-extended`);
+- захист більшості ендпоінтів через `@jwt_required()`:
+  - `GET /api/users`
+  - `POST /api/categories`, `GET /api/categories`
+  - `POST /api/expenses`, `GET /api/expenses` тощо;
+- обробники типових помилок JWT (прострочений токен, невалідний токен, відсутній токен);
+- оновлена Postman-колекція з flow: **Register → Login → інші запити з токеном**.
+
+---
+
+## Конфігурація JWT
+
+Секретний ключ для підпису токенів читається з змінної середовища:
+
+```text
+JWT_SECRET_KEY
+```
+
+Приклад (PowerShell, Windows):
+
+```powershell
+$Env:JWT_SECRET_KEY = "180986620027478057812366299827004465232"
+$Env:FLASK_APP = "manage.py"
+```
+
+Після цього API можна запускати локально або в Docker.
+
+---
+
+## Запуск локально (без Docker, опціонально)
+
+1. Створити та активувати віртуальне середовище:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+2. Встановити залежності:
+
+```powershell
+pip install -r requirements.txt
+```
+
+3. Задати змінні середовища (як вище) і запустити:
+
+```powershell
+python -m flask run
+```
+
+---
+
+## Postman (ЛР4, JWT flow)
+
+1. Імпорт з каталогу `postman/`:
+   - `expenses_lab3_collection.json` (оновлена колекція для ЛР4),
+   - `expenses_lab3_environment.json`.
+
+2. Вибрати environment **Expenses API — local** (`baseUrl = http://localhost:5000`).
+
+3. Виконати запити послідовно:
+
+1) **Auth / Register**
+
+```http
+POST {{baseUrl}}/api/users
+```
+
+Body (JSON):
+
+```json
+{
+  "email": "user3@example.com",
+  "password": "secret123"
+}
+```
+
+Успішна відповідь: `201 Created` + дані користувача.
+
+2) **Auth / Login**
+
+```http
+POST {{baseUrl}}/api/users/login
+```
+
+Body (JSON):
+
+```json
+{
+  "email": "user3@example.com",
+  "password": "secret123"
+}
+```
+
+У Tests колекції зберігається `access_token` у змінну `accessToken` середовища.  
+Далі всі захищені ендпоінти використовують заголовок:
+
+```http
+Authorization: Bearer {{accessToken}}
+```
+
+3) Інші запити колекції (**Users / List**, **Categories / ...**, **Expenses / ...**) уже автоматично додають цей заголовок.
+
+---
+
+## Скріншоти ЛР4 (JWT)
+
+### 1. Реєстрація користувача
+
+![Auth Register](screens/lab4_register.png)
+
+### 2. Логін та отримання JWT-токена
+
+![Auth Login](screens/lab4_login.png)
+
+---
+
+Таким чином, у репозиторії реалізовано:
+
+- ЛР3 — валідація, обробка помилок, ORM, користувацькі категорії витрат;
+- ЛР4 — JWT-аутентифікація, захист ендпоінтів, flow у Postman та демонстраційні скріншоти.

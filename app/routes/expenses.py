@@ -1,12 +1,19 @@
-
 from flask_smorest import Blueprint, abort
+from flask_jwt_extended import jwt_required
 from .. import db
 from ..models import Expense, User, Category
 from ..schemas import ExpenseCreateSchema, ExpenseOutSchema
 
-blp = Blueprint("expenses", __name__, url_prefix="/api/expenses", description="Expenses")
+blp = Blueprint(
+    "expenses",
+    __name__,
+    url_prefix="/api/expenses",
+    description="Expenses",
+)
+
 
 @blp.route("", methods=["POST"])
+@jwt_required()
 @blp.arguments(ExpenseCreateSchema)
 @blp.response(201, ExpenseOutSchema)
 def create_expense(payload):
@@ -16,10 +23,12 @@ def create_expense(payload):
         abort(404, message="User not found")
 
     category_id = payload.get("category_id")
+    category = None
     if category_id is not None:
-        cat = Category.query.get(category_id)
-        if not cat:
+        category = Category.query.get(category_id)
+        if not category:
             abort(404, message="Category not found")
+
     expense = Expense(
         user_id=user_id,
         category_id=category_id,
@@ -30,7 +39,9 @@ def create_expense(payload):
     db.session.commit()
     return expense
 
+
 @blp.route("", methods=["GET"])
+@jwt_required()
 @blp.response(200, ExpenseOutSchema(many=True))
 def list_expenses():
     # For demo simplicity, list all

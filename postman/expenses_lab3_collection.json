@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Expenses API — Lab 3",
+    "name": "Expenses API — Lab 4 (JWT)",
     "_postman_id": "d1111111-2222-3333-4444-555555555555",
-    "description": "Колекція для перевірки ендпоінтів лабораторної 3",
+    "description": "Колекція для перевірки ендпоінтів лабораторної 4 (JWT аутентифікація): реєстрація, логін, захищені категорії та витрати.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -23,7 +23,7 @@
       }
     },
     {
-      "name": "Users / Create",
+      "name": "Auth / Register",
       "request": {
         "method": "POST",
         "header": [
@@ -44,15 +44,63 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\"email\": \"user@example.com\"}"
+          "raw": "{\"email\": \"user@example.com\", \"password\": \"secret123\"}"
         }
       }
+    },
+    {
+      "name": "Auth / Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "login"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\"email\": \"user@example.com\", \"password\": \"secret123\"}"
+        },
+        "description": "Логін користувача, видає JWT access_token."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const data = pm.response.json();",
+              "if (data.access_token) {",
+              "    pm.environment.set('accessToken', data.access_token);",
+              "}"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Users / List",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}",
+            "type": "text"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/users",
           "host": [
@@ -73,6 +121,11 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}",
+            "type": "text"
           }
         ],
         "url": {
@@ -103,6 +156,11 @@
           {
             "key": "X-User-Id",
             "value": "1"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}",
+            "type": "text"
           }
         ],
         "url": {
@@ -129,6 +187,11 @@
           {
             "key": "X-User-Id",
             "value": "1"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}",
+            "type": "text"
           }
         ],
         "url": {
@@ -151,6 +214,11 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}",
+            "type": "text"
           }
         ],
         "url": {
@@ -173,7 +241,13 @@
       "name": "Expenses / List",
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{accessToken}}",
+            "type": "text"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/expenses",
           "host": [
